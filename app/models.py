@@ -1,13 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import UserMixin
 from datetime import datetime
-from app.extensions import db  # ✅ import from extensions, not app
-from app import db
-from flask_wtf.file import FileField, FileAllowed
-from flask_wtf import FlaskForm
-from wtforms import StringField, PasswordField, SubmitField
-from wtforms.validators import DataRequired, Email, Optional
-from flask_wtf.file import FileField, FileAllowed
+from app.extensions import db
 
 class ChatMessage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -21,8 +15,9 @@ class ChatMessage(db.Model):
             "id": self.id,
             "content": self.content,
             "sender": self.sender,
-            "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+            "timestamp": self.timestamp.strftime("%Y-%m-%d %H:%M:%S") if self.timestamp else None
         }
+
 class Testimonial(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
@@ -41,9 +36,9 @@ class Writer(db.Model):
     subject = db.Column(db.String(100))
     image_url = db.Column(db.String(255))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    approved = db.Column(db.Boolean, default=False)  # ✅ Add this
+    approved = db.Column(db.Boolean, default=False)
 
-class settings(db.Model):
+class Settings(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     image_url = db.Column(db.String(255))
@@ -58,37 +53,39 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(50), nullable=False)
-    password = db.Column(db.String(128), nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
     photo = db.Column(db.String(120), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     orders = db.relationship('Order', backref='user', lazy=True)
 
     def is_admin(self):
-        return self.role == "admin"
+        return hasattr(self, "role") and self.role == "admin"
 
     def is_writer(self):
-        return self.role == "writer"
-    
+        return hasattr(self, "role") and self.role == "writer"
+
     def set_password(self, password):
+        from werkzeug.security import generate_password_hash
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
+        from werkzeug.security import check_password_hash
         return check_password_hash(self.password_hash, password)
      
 class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(100))  # or Integer if you're using User model
-    sender = db.Column(db.String(50))  # "admin", "user", or "writer"
+    sender_id = db.Column(db.Integer, nullable=False)
+    receiver_id = db.Column(db.Integer, nullable=False)
     content = db.Column(db.Text, nullable=False)
-    is_read = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+    is_admin = db.Column(db.Boolean, default=False)
+    timestamp = db.Column(db.DateTime, default=datetime.utcnow)
+
 class Payment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(100))
     amount = db.Column(db.Float)
     method = db.Column(db.String(50))
-    status = db.Column(db.String(20))  # e.g., 'Pending', 'Completed'
+    status = db.Column(db.String(20))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class SiteSetting(db.Model):
@@ -100,12 +97,13 @@ class Announcement(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     body = db.Column(db.Text, nullable=False)
-    audience = db.Column(db.String(20), nullable=False)  # e.g., 'all', 'writers', 'clients'
+    audience = db.Column(db.String(20), nullable=False)
+    category = db.Column(db.String(100), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 class PublicPage(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    slug = db.Column(db.String(50), unique=True, nullable=False)  # e.g., 'about', 'faq'
+    slug = db.Column(db.String(50), unique=True, nullable=False)
     title = db.Column(db.String(100), nullable=False)
     content = db.Column(db.Text, nullable=False)
 
@@ -131,13 +129,13 @@ class OrderFile(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     filename = db.Column(db.String(255), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
-    uploader = db.Column(db.String(50))  # 'client', 'writer', 'admin'
-    order_id = db.Column(db.Integer, nullable=True)  # Optional: Link to an Order
+    uploader = db.Column(db.String(50))
+    order_id = db.Column(db.Integer, nullable=True)
 
 class BlogPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(255), nullable=False)
-    content = db.Column(db.Text, nullable=False)  # ✅ This line is critical
+    content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
 class Sample(db.Model):
@@ -147,20 +145,6 @@ class Sample(db.Model):
     content = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class ProfileForm(FlaskForm):
-    name = StringField("Full Name", validators=[Optional()])
-    email = StringField("Email", validators=[Optional(), Email()])
-    password = PasswordField("New Password", validators=[Optional()])
-    photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
-    submit = SubmitField("Update Profile")
-
-class SettingForm(FlaskForm):
-    name = StringField("Full Name", validators=[Optional()])
-    email = StringField("Email", validators=[DataRequired(), Email()])
-    password = PasswordField("New Password", validators=[Optional()])
-    photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
-    submit = SubmitField("Save changes")
-
 class Application(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -169,4 +153,3 @@ class Application(db.Model):
     bio = db.Column(db.Text, nullable=False)
     approved = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    

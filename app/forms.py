@@ -45,9 +45,9 @@ class SettingForm(FlaskForm):
     submit = SubmitField("Save changes")
 
 class ApplicationForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
-    name = StringField('Name', validators=[DataRequired(), Length(min=2, max=50)])
-    subject =StringField('Subject', validators=[DataRequired(), Length(min=2, max=50)])
-    submit = SubmitField('Register')
-    
+    name = StringField("Full Name", validators=[DataRequired()])
+    email = StringField("Email", validators=[DataRequired(), Email()])
+    subject = StringField("Subject/Expertise", validators=[DataRequired()])
+    bio = TextAreaField("Short Bio", validators=[DataRequired()])
+    submit = SubmitField("Apply")
     

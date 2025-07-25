@@ -446,7 +446,7 @@
       </div>
       <span class="text-success fs-4">⌛</span>
     </div>
-    <form method="POST" id="chat-form" action="{{ url_for('main.send_message') }}">
+    <form method="POST" id="chat-form" action="{{ url_for('main.contact') }}">
   <div id="chat-messages" class="mb-3" style="height: 150px; overflow-y: auto; background: #f8f9fa; padding: 10px; border: 1px solid #dee2e6; border-radius: 5px;">
     <!-- Chat history will appear here -->
   </div>
@@ -456,49 +456,32 @@
   </div>
 </form>
 <script>
-const chatForm = document.getElementById("chat-form");
-const chatMessages = document.getElementById("chat-messages");
-const messageInput = document.getElementById("user-message");
+  const chatForm = document.getElementById("chat-form");
+  const chatMessages = document.getElementById("chat-messages");
+  const messageInput = document.getElementById("user-message");
 
-chatForm.addEventListener("submit", function(event) {
-  event.preventDefault();
-  const message = messageInput.value.trim();
-  if (!message) return;
+  chatForm.addEventListener("submit", function(event) {
+    event.preventDefault();
+    const message = messageInput.value.trim();
+    if (!message) return;
 
-  fetch("/send_message", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ message: message })
-  }).then(res => res.json()).then(data => {
-    if (data.status === "Message sent") {
-      const userBubble = document.createElement("div");
-      userBubble.className = "mb-2 text-end";
-      userBubble.innerHTML = `<span class='badge bg-primary'>${message}</span>`;
-      chatMessages.appendChild(userBubble);
+    // Append to chat box
+    const userBubble = document.createElement("div");
+    userBubble.className = "mb-2 text-end";
+    userBubble.innerHTML = `<span class='badge bg-primary'>${message}</span>`;
+    chatMessages.appendChild(userBubble);
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    messageInput.value = "";
+
+    // Simulate sending to server (extend this with backend logic)
+    const adminBubble = document.createElement("div");
+    adminBubble.className = "mb-2 text-start";
+    setTimeout(() => {
+      adminBubble.innerHTML = `<span class='badge bg-secondary'>Thanks for reaching out! We'll reply shortly.</span>`;
+      chatMessages.appendChild(adminBubble);
       chatMessages.scrollTop = chatMessages.scrollHeight;
-      messageInput.value = "";
-    }
+    }, 1000);
   });
-});
-
-function loadMessages() {
-  fetch("/get_messages")
-    .then(res => res.json())
-    .then(data => {
-      chatMessages.innerHTML = "";
-      data.forEach(msg => {
-        const bubble = document.createElement("div");
-        bubble.className = "mb-2 " + (msg.is_admin ? "text-start" : "text-end");
-        bubble.innerHTML = `<span class='badge ${msg.is_admin ? 'bg-secondary' : 'bg-primary'}'>${msg.content}</span>`;
-        chatMessages.appendChild(bubble);
-      });
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-    });
-}
-loadMessages();
-setInterval(loadMessages, 5000); // Auto refresh every 5s
 </script>
   </div>
 </div>

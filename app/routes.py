@@ -1,25 +1,18 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app, abort
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
-from collections import defaultdict
-from flask import abort, render_template
 from datetime import datetime
-from app.models import BlogPost
-from app.models import Sample
-from flask_mail import Message
-from app import mail
-from app.models import User
-from flask import redirect, url_for, flash
-from flask_login import LoginManager
-from app.extensions import login_manager
-from app.forms import OrderForm, RegistrationForm, LoginForm, ProfileForm, SettingForm, ApplicationForm
 import os
 
+from app.extensions import db, login_manager
+from app.forms import OrderForm, RegistrationForm, LoginForm, ProfileForm, SettingForm, ApplicationForm
 from app.models import (
-    db, User, Testimonial, Lead, Writer, SiteReview, ChatMessage, Message,
-    Announcement, Order, OrderFile
+    BlogPost, Sample, User, Testimonial, Lead, Writer, SiteReview, ChatMessage, Message,
+    Announcement, Order, OrderFile, Application
 )
+from flask_mail import Message as MailMessage
+from app import mail
 
 main = Blueprint("main", __name__)
 
@@ -27,20 +20,21 @@ main = Blueprint("main", __name__)
 def index():
     page = request.args.get("page", 1, type=int)
     category = request.args.get("category", "public")
+    writers = Application.query.filter_by(approved=True).all()
 
     announcements = Announcement.query.filter_by(audience=category)\
         .order_by(Announcement.created_at.desc())\
         .paginate(page=page, per_page=5)
 
     writers = Writer.query.order_by(Writer.created_at.desc()).limit(4).all()
-    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).limit(3).all()  # Optional: latest blog posts
-
+    posts = BlogPost.query.order_by(BlogPost.created_at.desc()).limit(3).all()
+ 
     return render_template(
         "index.html",
         announcements=announcements,
         selected_category=category,
         writers=writers,
-        posts=posts  # Optional
+        posts=posts
     )
 
 @main.route('/lead', methods=['POST'])
@@ -49,7 +43,7 @@ def lead():
     new_lead = Lead(topic=topic)
     db.session.add(new_lead)
     db.session.commit()
-    return redirect(url_for('main.index'))  # or a thank-you page
+    return redirect(url_for('main.index'))
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'app', 'static', 'uploads')
 ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg'}
@@ -58,10 +52,10 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def get_grouped_chats():
-    chats = Message.query.order_by(Message.created_at.asc()).all()
+    chats = Message.query.order_by(Message.timestamp.asc()).all()
     grouped = {}
     for msg in chats:
-        grouped.setdefault(msg.user_id, []).append(msg)
+        grouped.setdefault(msg.sender_id, []).append(msg)
     return grouped
 
 @main.route('/Register now', methods=['GET', 'POST'])
@@ -75,6 +69,34 @@ def register():
         flash('Account created successfully! Please log in.', 'success')
         return redirect(url_for('main.login'))
     return render_template('register.html', form=form)
+
+@main.route('/send_message', methods=['POST'])
+@login_required
+def send_message():
+    data = request.get_json()
+    content = data.get('message')
+    if not content:
+        return jsonify({'error': 'Empty message'}), 400
+
+    msg = Message(sender_id=current_user.id, receiver_id=0, content=content)
+    db.session.add(msg)
+    db.session.commit()
+    return jsonify({'status': 'Message sent'})
+
+@main.route('/get_messages', methods=['GET'])
+@login_required
+def get_messages():
+    messages = Message.query.filter(
+        (Message.sender_id == current_user.id) | 
+        (Message.receiver_id == current_user.id)
+    ).order_by(Message.timestamp).all()
+    return jsonify([
+        {
+            'content': m.content,
+            'is_admin': m.is_admin,
+            'timestamp': m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp else None
+        } for m in messages
+    ])
 
 @main.route("/login", methods=["GET", "POST"])
 def login():
@@ -114,7 +136,6 @@ def unauthorized_callback():
 def admin_messages():
     if not current_user.is_admin:
         abort(403)
-    # Example placeholder
     return render_template('admin_messages.html')
 
 @main.route('/writers')
@@ -258,9 +279,9 @@ def delete_writer(id):
 @main.route('/writer/thanks')
 def writer_thank_you():
     return render_template('writer_thank_you.html')
+
 @main.route('/admin/writer/add', methods=['GET', 'POST'])
 @login_required
-
 def add_writer():
     if request.method == 'POST':
         name = request.form['name']
@@ -290,7 +311,7 @@ def order():
         db.session.commit()
 
         # Send email
-        msg = Message(
+        msg = MailMessage(
             subject="✅ We Received Your Order",
             recipients=[form.email.data],
             body=f"""
@@ -352,11 +373,12 @@ def contact():
     message = request.form.get('message')
     name = request.form.get('name')
     email = request.form.get('email')
-
+    # Choose how to associate sender/receiver. Here, sender_id=0 (guest), receiver_id=1 (admin)
     new_msg = Message(
-        user_id=email or name,
-        sender='user',
-        content=message
+        sender_id=0,
+        receiver_id=1,
+        content=message,
+        is_admin=False
     )
     db.session.add(new_msg)
     db.session.commit()
@@ -373,9 +395,10 @@ def reply_to_user():
     message = request.form.get('message')
 
     msg = Message(
-        user_id=user_id,
-        sender='admin',
-        content=message
+        sender_id=current_user.id,    # admin's user id
+        receiver_id=int(user_id),     # the user being replied to
+        content=message,
+        is_admin=True
     )
     db.session.add(msg)
     db.session.commit()
@@ -383,19 +406,20 @@ def reply_to_user():
 
 @main.route('/chat/messages')
 def get_messages_json():
-    messages = Message.query.order_by(Message.created_at.asc()).all()
+    messages = Message.query.order_by(Message.timestamp.asc()).all()
     result = [{
-        "sender": msg.sender,
+        "sender_id": msg.sender_id,
+        "receiver_id": msg.receiver_id,
         "content": msg.content,
-        "timestamp": msg.created_at.strftime("%Y-%m-%d %H:%M")
+        "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M") if msg.timestamp else None
     } for msg in messages]
     return jsonify(result)
 
-UPLOAD_FOLDER = os.path.join(os.getcwd(), 'app', 'static', 'uploads')
-ALLOWED_EXTENSIONS = {'pdf', 'doc', 'docx', 'txt', 'png', 'jpg'}
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+@main.route('/admin_chat')
+def admin_chat():
+    if not current_user.is_admin:
+        return redirect(url_for('main.index'))
+    return render_template("admin_chat.html")
 
 @main.route('/admin/uploads', methods=['GET', 'POST'])
 def upload_file():
@@ -475,7 +499,7 @@ def admin_Blog():
         content = request.form.get('content')
 
         if not title or not content:
-            return "Missing data", 400  # This can trigger the 400 you're seeing
+            return "Missing data", 400
 
         new_post = BlogPost(title=title, content=content)
         db.session.add(new_post)
@@ -503,6 +527,22 @@ def delete_blog(id):
     db.session.commit()
     flash('Blog post deleted.', 'info')
     return redirect(url_for('main.admin_Blog'))
+
+@main.route('/admin/messages', methods=['GET'])
+@login_required
+def admin_view_all():
+    if not current_user.is_admin:
+        return "Forbidden", 403
+    all_msgs = Message.query.order_by(Message.timestamp).all()
+    return jsonify([
+        {
+            'from': m.sender_id,
+            'to': m.receiver_id,
+            'content': m.content,
+            'is_admin': m.is_admin,
+            'timestamp': m.timestamp.strftime("%Y-%m-%d %H:%M") if m.timestamp else None
+        } for m in all_msgs
+    ])
 
 # ------------------------
 # 🏢 Company Section Routes
@@ -546,7 +586,6 @@ def payment_policy():
 @main.route('/dont_buy_accounts')
 def dont_buy_accounts():
     return render_template('dont_buy_accounts.html')
-
 
 # ------------------------
 # 🧾 Services Section Routes
@@ -612,8 +651,6 @@ def inject_now():
 @main.route("/dashboard")
 @login_required
 def dashboard():
-    # You can fetch related data if needed
-    # e.g., orders = Order.query.filter_by(user_id=current_user.id).all()
     return render_template("dashboard.html", user=current_user)
 
 @main.route("/profile", methods=["GET", "POST"])
@@ -645,21 +682,23 @@ def settings():
     return render_template("settings.html", form=form)
 
 @main.route('/writer/apply', methods=['GET', 'POST'])
-@login_required
 def writer_apply():
-    form = ApplicationForm(obj=current_user)
-    if request.method == 'POST':
-        name = request.form['name']
-        subject = request.form['subject']
-        image_url = request.form.get('image_url')  # Optional
-        new_writer = Writer(name=name, subject=subject, image_url=image_url)
-        db.session.add(new_writer)
+    form = ApplicationForm()
+    if form.validate_on_submit():
+        application = Application(
+            name=form.name.data,
+            email=form.email.data,
+            subject=form.subject.data,
+            bio=form.bio.data
+        )
+        db.session.add(application)
         db.session.commit()
-        return redirect(url_for("main.writer_apply"))
-    return render_template("writer_apply.html", form=form)
- 
+        flash("Your application has been submitted! We'll review and notify you.", "success")
+        return redirect(url_for('main.index'))
+    return render_template('writer_apply.html', form=form)
+
 @main.route("/my-orders")
 @login_required
 def my_orders():
-    orders = current_user.orders  # this uses the relationship
+    orders = current_user.orders
     return render_template("my_orders.html", orders=orders)

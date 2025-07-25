@@ -1,0 +1,50 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <h2 class="mb-4 fw-bold text-primary">📁 File Uploads</h2>
+
+  <!-- Upload Form -->
+  <div class="card mb-4 shadow-sm">
+    <div class="card-header bg-info text-white fw-semibold">
+      Upload a New File
+    </div>
+    <div class="card-body">
+      <form method="POST" enctype="multipart/form-data" class="row g-3">
+        <div class="col-md-8">
+          <input type="file" name="file" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <button type="submit" class="btn btn-success w-100">Upload</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Uploaded Files List -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-secondary text-white fw-semibold">
+      Uploaded Files
+    </div>
+    <div class="card-body">
+      {% if files %}
+      <ul class="list-group">
+        {% for file in files %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <a href="{{ url_for('static', filename='uploads/' ~ file) }}" target="_blank">{{ file }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="text-muted">No files uploaded yet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Back to Dashboard -->
+  <div class="mt-4">
+    <a href="{{ url_for('main.admin_dashboard') }}" class="btn btn-outline-secondary">← Back to Dashboard</a>
+  </div>
+</div>
+
+{% endblock %}

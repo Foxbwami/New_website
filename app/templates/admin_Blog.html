@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+  <h2 class="mb-4 fw-bold text-primary">📝 Manage Blog Posts</h2>
+
+  <!-- Add Blog Form -->
+  <form method="POST" class="mb-4">
+    <div class="mb-3">
+      <input name="title" class="form-control" placeholder="Blog Title" required>
+    </div>
+    <div class="mb-3">
+      <textarea name="content" class="form-control" placeholder="Content" rows="5" required></textarea>
+    </div>
+    <button class="btn btn-success">➕ Add Blog</button>
+  </form>
+
+  <hr>
+
+  <!-- Blog List -->
+  <ul class="list-group mt-4">
+    {% for post in posts %}
+      <li class="list-group-item">
+        <strong>{{ post.title }}</strong>
+        <p class="mb-1">{{ post.content[:100] }}...</p>
+        <small class="text-muted">Posted: {{ post.created_at.strftime('%Y-%m-%d') }}</small>
+        <div class="mt-2">
+          <a href="{{ url_for('main.edit_blog', id=post.id) }}" class="btn btn-sm btn-outline-warning">✏️ Edit</a>
+          <a href="{{ url_for('main.delete_blog', id=post.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to delete this blog?')">🗑️ Delete</a>
+        </div>
+      </li>
+    {% else %}
+      <li class="list-group-item text-muted">No blog posts available.</li>
+    {% endfor %}
+  </ul>
+</div>
+
+{% endblock %}

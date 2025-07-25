@@ -1,0 +1,60 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2 class="mb-4">📢 Manage Announcements</h2>
+
+<form method="GET" action="{{ url_for('main.admin_announcements') }}" class="mb-3">
+  <select name="category" class="form-select w-auto d-inline">
+    <option value="">All Categories</option>
+    <option value="general" {% if selected_category == 'general' %}selected{% endif %}>General</option>
+    <option value="homepage" {% if selected_category == 'homepage' %}selected{% endif %}>Homepage</option>
+    <option value="writers" {% if selected_category == 'writers' %}selected{% endif %}>Writers</option>
+  </select>
+  <button type="submit" class="btn btn-sm btn-primary">Filter</button>
+</form>
+
+<form method="POST">
+  <input name="title" class="form-control mb-2" placeholder="Title">
+  <textarea name="body" class="form-control mb-2" placeholder="Announcement Body"></textarea>
+
+  <select name="category" class="form-select mt-2">
+  <option value="general">General</option>
+  <option value="homepage">Homepage</option>
+  <option value="writers">Writers</option>
+  <option value="updates">Updates</option>
+</select>
+
+<nav aria-label="Page navigation">
+  <ul class="pagination justify-content-center">
+    {% if pagination.has_prev %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('main.admin_announcements', page=pagination.prev_num) }}">Previous</a>
+      </li>
+    {% endif %}
+    {% for page_num in pagination.iter_pages() %}
+      {% if page_num %}
+        <li class="page-item {% if pagination.page == page_num %}active{% endif %}">
+          <a class="page-link" href="{{ url_for('main.admin_announcements', page=page_num) }}">{{ page_num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+    {% if pagination.has_next %}
+      <li class="page-item">
+        <a class="page-link" href="{{ url_for('main.admin_announcements', page=pagination.next_num) }}">Next</a>
+      </li>
+    {% endif %}
+  </ul>
+</nav>
+
+  <button class="btn btn-primary" type="submit">Post</button>
+</form>
+
+<ul class="list-group">
+  {% for a in announcements %}
+  <li class="list-group-item">
+    <strong>{{ a.title }}</strong> <span class="text-muted small">({{ a.audience }})</span><br>
+    {{ a.body }}<br>
+    <small class="text-muted">{{ a.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

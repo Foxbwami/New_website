@@ -1,0 +1,38 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2>Received Orders</h2>
+
+<table class="table table-bordered">
+  <thead class="table-light">
+    <tr>
+      <th>ID</th>
+      <th>Client</th>
+      <th>Email</th>
+      <th>Subject</th>
+      <th>Instructions</th>
+      <th>Submitted</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for order in orders %}
+    <tr>
+      <td>{{ order.id }}</td>
+      <td>{{ order.client_name }}</td>
+      <td>{{ order.email }}</td>
+      <td>{{ order.subject }}</td>
+      <td>{{ order.instructions[:100] }}...</td>
+      <td>{{ order.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+    </tr>
+    <td>
+  <a href="{{ url_for('main.delete_order', id=order.id) }}"
+     class="btn btn-sm btn-danger"
+     onclick="return confirm('Delete this order?')">Delete</a>
+</td>
+<form method="GET" class="mb-3 d-flex">
+  <input type="text" name="q" class="form-control me-2" placeholder="Search by name or subject">
+  <button class="btn btn-outline-primary">Search</button>
+</form>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

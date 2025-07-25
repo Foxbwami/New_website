@@ -1,0 +1,99 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<!-- Mobile Sidebar Toggle Button -->
+<button class="btn btn-outline-secondary d-md-none mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#adminSidebar" aria-expanded="false" aria-controls="adminSidebar">
+  ☰ Menu
+</button>
+
+<!-- Main Admin Dashboard Section -->
+<div class="container-fluid py-4">
+  <h2 class="mb-4 fw-bold text-primary">📊 Admin Dashboard</h2>
+
+  <div class="row g-4">
+    <!-- Messages -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body text-center">
+          <div class="mb-2 fs-1 text-primary">📨</div>
+          <h5 class="card-title text-muted">Messages</h5>
+          <h3 class="text-primary">{{ stats.messages }}</h3>
+          <a href="{{ url_for('main.admin_chat_grouped') }}" class="btn btn-outline-primary btn-sm mt-2">Chat View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Testimonials -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body text-center">
+          <div class="mb-2 fs-1 text-success">📝</div>
+          <h5 class="card-title text-muted">Testimonials</h5>
+          <h3 class="text-success">{{ stats.testimonials }}</h3>
+          <a href="{{ url_for('main.admin_testimonials') }}" class="btn btn-outline-success btn-sm mt-2">View</a>
+        </div>
+      </div>
+    </div>
+    <!-- Writers -->
+<div class="col-md-3">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-body text-center">
+      <div class="mb-2 fs-1 text-warning">👩‍🎓</div>
+      <h5 class="card-title text-muted">Writers</h5>
+      <h3 class="text-warning">{{ stats.writers }}</h3>
+      <div class="d-grid gap-2">
+        <a href="{{ url_for('main.admin_writers') }}" class="btn btn-outline-warning btn-sm mt-2">Manage</a>
+        <a href="{{ url_for('main.add_writer') }}" class="btn btn-outline-success btn-sm mt-2">➕ Add</a>
+      </div>
+    </div>
+  </div>
+</div>
+    <!-- Leads -->
+    <div class="col-md-3">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-body text-center">
+          <div class="mb-2 fs-1 text-danger">📈</div>
+          <h5 class="card-title text-muted">Leads</h5>
+          <h3 class="text-danger">{{ stats.leads }}</h3>
+          <a href="{{ url_for('main.admin_leads') }}" class="btn btn-outline-danger btn-sm mt-2">View</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- Blog Posts -->
+<div class="col-md-3">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-body text-center">
+      <div class="mb-2 fs-1 text-info">📝</div>
+      <h5 class="card-title text-muted">Blog Posts</h5>
+      <a href="{{ url_for('main.admin_Blog') }}" class="btn btn-outline-info btn-sm mt-2">Manage</a>
+    </div>
+  </div>
+</div>
+
+<div class="col-md-3">
+  <div class="card shadow-sm border-0 h-100">
+    <div class="card-body text-center">
+      <div class="mb-2 fs-1 text-info">📝</div>
+      <h5 class="card-title text-muted">Samples</h5>
+      <a href="{{ url_for('main.admin_samples') }}" class="btn btn-outline-info btn-sm mt-2">Manage</a>
+    </div>
+  </div>
+</div>
+  <!-- Recent Announcements -->
+  <div class="mt-5">
+    <h4 class="fw-bold text-dark">📢 Recent Announcements</h4>
+    {% if announcements %}
+      <ul class="list-group">
+        {% for a in announcements[:5] %}
+          <li class="list-group-item">
+            <strong>{{ a.title }}</strong> <span class="text-muted">({{ a.audience }})</span><br>
+            {{ a.body }}
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div class="alert alert-info mt-2">No announcements posted yet.</div>
+    {% endif %}
+  </div>
+
+{% endblock %}

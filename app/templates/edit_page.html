@@ -1,0 +1,9 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2>Edit Page: {{ page.title }}</h2>
+<form method="POST">
+  <input name="title" value="{{ page.title }}" class="form-control mb-2" required>
+  <textarea name="content" rows="8" class="form-control mb-3" required>{{ page.content }}</textarea>
+  <button class="btn btn-success">Save Changes</button>
+</form>
+{% endblock %}

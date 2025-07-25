@@ -1,0 +1,39 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <h2 class="mb-4 fw-bold text-primary">📨 Inbox Messages</h2>
+
+  {% if messages %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">Message</th>
+          <th scope="col">Date</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in messages %}
+        <tr>
+          <td>{{ m.message }}</td>
+          <td>
+            {% if m.created_at %}
+              {{ m.created_at.strftime('%Y-%m-%d %H:%M') }}
+            {% else %}
+              <span class="text-muted">N/A</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center mt-4">
+    No messages in the inbox.
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

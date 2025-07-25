@@ -1,0 +1,22 @@
+{% extends 'admin_base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <h3 class="fw-bold text-primary">➕ Add New Writer</h3>
+  <form method="POST">
+    <div class="mb-3">
+      <label class="form-label">Name</label>
+      <input type="text" class="form-control" name="name" required>
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Subject</label>
+      <input type="text" class="form-control" name="subject">
+    </div>
+    <div class="mb-3">
+      <label class="form-label">Image URL (optional)</label>
+      <input type="url" class="form-control" name="image_url">
+    </div>
+    <button type="submit" class="btn btn-success">Add Writer</button>
+    <a href="{{ url_for('main.admin_writers') }}" class="btn btn-secondary">Back</a>
+  </form>
+</div>
+{% endblock %}

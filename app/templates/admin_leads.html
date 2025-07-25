@@ -1,0 +1,35 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <h2 class="mb-4 fw-bold text-primary">📋 Lead Submissions</h2>
+
+  {% if leads %}
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Topic</th>
+          <th scope="col">Date Submitted</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leads %}
+        <tr>
+          <td>{{ l.id }}</td>
+          <td>{{ l.topic }}</td>
+          <td>{{ l.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="alert alert-info text-center mt-4">
+    No leads submitted yet.
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

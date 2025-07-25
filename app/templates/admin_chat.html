@@ -1,0 +1,67 @@
+{% extends "admin_base.html" %}
+{% block content %}
+
+<div class="container-fluid py-4">
+  <h2 class="mb-4 fw-bold text-primary">💬 Admin Chat Panel</h2>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-primary text-white fw-semibold">
+      Live User Messages
+    </div>
+    <div class="card-body">
+      <div id="chat-history" class="mb-4 p-3 bg-light rounded border" style="height: 300px; overflow-y: auto;">
+        <!-- Chat messages will appear here -->
+      </div>
+
+      <form id="admin-chat-form" class="input-group">
+        <input type="text" id="admin-reply" class="form-control" placeholder="Type your reply..." required>
+        <button type="submit" class="btn btn-success">Send</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+  const historyBox = document.getElementById("chat-history");
+  const replyForm = document.getElementById("admin-chat-form");
+  const replyInput = document.getElementById("admin-reply");
+
+  function loadChat() {
+    fetch("/chat/messages")
+      .then(res => res.json())
+      .then(messages => {
+        historyBox.innerHTML = "";
+        messages.forEach(msg => {
+          const bubble = document.createElement("div");
+          bubble.className = `mb-2 text-${msg.sender === 'user' ? 'start' : 'end'}`;
+          bubble.innerHTML = `
+            <span class='badge bg-${msg.sender === 'user' ? 'primary' : 'secondary'}'>${msg.content}</span><br>
+            <small class='text-muted'>${msg.timestamp}</small>`;
+          historyBox.appendChild(bubble);
+        });
+        historyBox.scrollTop = historyBox.scrollHeight;
+      });
+  }
+
+  loadChat();
+  setInterval(loadChat, 5000); // Refresh every 5 seconds
+
+  replyForm.addEventListener("submit", function(e) {
+    e.preventDefault();
+    const message = replyInput.value.trim();
+    if (!message) return;
+
+    fetch("/chat/reply", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message })
+    })
+    .then(res => res.json())
+    .then(() => {
+      replyInput.value = "";
+      loadChat();
+    });
+  });
+</script>
+
+{% endblock %}

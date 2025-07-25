@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="text-center text-primary mb-4">📘 Writing Samples</h2>
+
+  {% if samples %}
+    <div class="row g-4">
+      {% for sample in samples %}
+        <div class="col-md-6">
+          <div class="card shadow-sm">
+            <div class="card-body">
+              <h5 class="card-title">{{ sample.title }}</h5>
+              <p class="text-muted">{{ sample.category }}</p>
+              <p class="card-text">{{ sample.content[:200] }}...</p>
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-center text-muted">No samples available yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

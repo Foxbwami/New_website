@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block content %}
+
+<form method="get" class="mb-4">
+  <input type="text" name="q" value="{{ query }}" placeholder="Search blogs..." class="form-control" />
+</form>
+
+<div class="container py-5">
+  <h2 class="mb-4 text-center fw-bold text-primary">📝 Latest Blog Posts</h2>
+
+  {% if blogs %}
+    <div class="row g-4">
+      {% for blog in blogs %}
+        <div class="col-md-6 col-lg-4">
+          <div class="card shadow-sm h-100 border-0">
+            <div class="card-body d-flex flex-column">
+              <h5 class="card-title text-dark">{{ blog.title }}</h5>
+              <p class="card-text text-muted small">
+                <i class="bi bi-calendar"></i> {{ blog.created_at.strftime('%b %d, %Y') }}
+              </p>
+              <p class="card-text flex-grow-1">{{ blog.content[:200] }}...</p>
+              <div class="mt-2 text-end">
+                <a href="{{ url_for('main.blog_detail', id=blog.id) }}" class="btn btn-outline-primary btn-sm">Read More</a>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mt-3 text-center">
+  {% if blogs.has_prev %}
+    <a href="{{ url_for('main.blog_list', page=blogs.prev_num, q=query) }}" class="btn btn-sm btn-outline-primary">Prev</a>
+  {% endif %}
+  <span class="mx-2">Page {{ blogs.page }} of {{ blogs.pages }}</span>
+  {% if blogs.has_next %}
+    <a href="{{ url_for('main.blog_list', page=blogs.next_num, q=query) }}" class="btn btn-sm btn-outline-primary">Next</a>
+  {% endif %}
+</div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-muted text-center">No blog posts available yet.</p>
+  {% endif %}
+</div>
+
+{% endblock %}

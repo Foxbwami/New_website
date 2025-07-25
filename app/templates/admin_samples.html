@@ -1,0 +1,20 @@
+{% extends "admin_base.html" %}
+{% block content %}
+<h2 class="mb-3">Manage Writing Samples</h2>
+
+<form method="POST" class="mb-4">
+  <input name="title" class="form-control mb-2" placeholder="Sample Title" required>
+  <input name="category" class="form-control mb-2" placeholder="Category (e.g., Essay, Report)" required>
+  <textarea name="content" class="form-control mb-2" placeholder="Sample Content" rows="6" required></textarea>
+  <button class="btn btn-success">Add Sample</button>
+</form>
+
+<ul class="list-group">
+  {% for sample in samples %}
+    <li class="list-group-item">
+      <strong>{{ sample.title }}</strong> - <em>{{ sample.category }}</em><br>
+      {{ sample.content[:100] }}...
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

@@ -161,9 +161,12 @@ class SettingForm(FlaskForm):
     photo = FileField('Profile Photo', validators=[FileAllowed(['jpg', 'png', 'jpeg'], 'Images only!')])
     submit = SubmitField("Save changes")
 
-class ApplicationForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()])
+class Application(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    subject = db.Column(db.String(100))
-    submit = SubmitField('Register')
+    email = db.Column(db.String(120), nullable=False)
+    subject = db.Column(db.String(100), nullable=False)
+    bio = db.Column(db.Text, nullable=False)
+    approved = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
